@@ -30,4 +30,6 @@ double squareFunction(double x) {
     return x * x;  // Example: integral of x^2
 }
 
-
+double sineFunction(double x) {
+    return sin(x);
+}

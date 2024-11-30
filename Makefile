@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -ggdb
+CFLAGS = -Wall -Wextra -lm -ggdb
 
 SRC_DIR = src
 HRD_DIR = hrd
