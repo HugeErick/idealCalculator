@@ -1,33 +1,26 @@
-; Development Environment Installer
 ; Installs Chocolatey, Make, and MSYS2
-
 ; Modern UI and Logic
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
-
 ; Installer Details
 Name "Dev Environment Installer"
 OutFile "DevEnvironmentSetup.exe"
 RequestExecutionLevel admin
 InstallDir "C:\DevTools"
-
 ; Pages
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
-
 !insertmacro MUI_LANGUAGE "English"
-
 ; Sections
 Section "Chocolatey" SEC_CHOCOLATEY
     DetailPrint "Checking and Installing Chocolatey..."
     
     ; Use PowerShell to download and install Chocolatey
-    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ((New-Object System.Net.WebClient).DownloadString(''https://community.chocolatey.org/install.ps1''))"'
-
-		Pop $0
+    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString(''https://community.chocolatey.org/install.ps1''))"'
+    Pop $0
     ${If} $0 == "0"
         DetailPrint "Chocolatey installed successfully."
         MessageBox MB_OK "Chocolatey installed successfully."
@@ -49,7 +42,7 @@ Section "Make" SEC_MAKE
         MessageBox MB_OK "Make installed successfully."
     ${Else}
         DetailPrint "Failed to install Make."
-        MessageBox MB_OK "Failed to install Make." ; Simplified
+        MessageBox MB_OK "Failed to install Make."
         Abort
     ${EndIf}
 SectionEnd
@@ -58,9 +51,8 @@ Section "MSYS2" SEC_MSYS2
     DetailPrint "Downloading MSYS2 Installer..."
     
     ; Download MSYS2 Installer using PowerShell
-    nsExec::ExecToLog 'powershell -Command "$(New-Object System.Net.WebClient).DownloadFile(''https://github.com/msys2/msys2-installer/releases/download/2024-01-13/msys2-x86_64-20240113.exe'', ''$TEMP\msys2-installer.exe'')"'
-
-		Pop $0
+    nsExec::ExecToLog 'powershell -Command "(New-Object System.Net.WebClient).DownloadFile(''https://github.com/msys2/msys2-installer/releases/download/2024-01-13/msys2-x86_64-20240113.exe'', ''$TEMP\msys2-installer.exe'')"'
+    Pop $0
     ${If} $0 == "0"
         DetailPrint "MSYS2 installer downloaded successfully."
         
@@ -98,4 +90,3 @@ FunctionEnd
 Function .onInstSuccess
     MessageBox MB_OK "Development environment setup is complete!"
 FunctionEnd
-
