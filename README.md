@@ -22,7 +22,7 @@ idealCalculator is a C-based numerical integration tool that implements the Comp
 
 ### Steps
 
-1. Install Make:
+1. Install Prerequisites:
    - **Linux (Ubuntu/Debian)**:  
      ```bash
      sudo apt-get install make
@@ -33,7 +33,8 @@ idealCalculator is a C-based numerical integration tool that implements the Comp
      xcode-select --install
      ```
    - **Windows**:  
-     Run wizard: 
+     1. Download zip from this repository
+     2. Run wizard: 
      ```
      DevEnvironmentSetup.exe
      ```
