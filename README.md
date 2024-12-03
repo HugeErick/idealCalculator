@@ -33,14 +33,35 @@ idealCalculator is a C-based numerical integration tool that implements the Comp
      xcode-select --install
      ```
    - **Windows**:  
-     Install Make using [Chocolatey](https://chocolatey.org/install).  
-     Follow these steps:  
-     1. Open PowerShell as Administrator.  
-     2. Install Chocolatey if you haven’t already:  
+     We provide a convenient PowerShell wizard script (`winWizard.ps1`) to simplify Make installation. Follow these steps:
+
+     1. Ensure you have permissions to execute PowerShell scripts. You may need to adjust the execution policy:
         ```powershell
-        Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
         ```
-     3. Install Make using Chocolatey:  
+
+     2. Download the `winWizard.ps1` script from the repository.
+
+     3. Open PowerShell as Administrator.
+
+     4. Navigate to the directory containing the `winWizard.ps1` script.
+
+     5. Run the wizard script:
+        ```powershell
+        .\winWizard.ps1
+        ```
+
+     6. Follow the on-screen prompts to install Chocolatey (if not already installed) and Make.
+
+     Alternative Manual Installation Method:
+     1. Open PowerShell as Administrator
+     2. Install Chocolatey:
+        ```powershell
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        ```
+     3. Install Make:
         ```powershell
         choco install make
         ```
