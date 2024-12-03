@@ -25,7 +25,7 @@ Section "Chocolatey" SEC_CHOCOLATEY
     DetailPrint "Checking and Installing Chocolatey..."
     
     ; Use PowerShell to download and install Chocolatey
-    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ((New-Object Net.WebClient).DownloadString(''https://community.chocolatey.org/install.ps1''))"'
+    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression (New-Object System.Net.WebClient).DownloadString(''https://community.chocolatey.org/install.ps1'')"'
     Pop $0
     ${If} $0 == "0"
         DetailPrint "Chocolatey installed successfully."
