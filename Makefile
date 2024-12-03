@@ -1,4 +1,12 @@
-CC = gcc
+# Detect operating system
+ifeq ($(OS),Windows_NT)
+    CC = x86_64-w64-mingw32-gcc  # MSYS2 MinGW-w64 GCC
+    EXE_EXT = .exe
+else
+    CC = gcc
+    EXE_EXT = 
+endif
+
 CFLAGS = -Wall -Wextra -lm -ggdb
 
 SRC_DIR = src
@@ -8,7 +16,7 @@ BIN_DIR = bin
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
-TARGET = $(BIN_DIR)/idealCalcu
+TARGET = $(BIN_DIR)/idealCalcu$(EXE_EXT)
 
 .PHONY: all clean run
 
@@ -28,5 +36,4 @@ clean:
 
 run: $(TARGET)
 	./$(TARGET)
-
 
