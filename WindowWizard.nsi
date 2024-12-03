@@ -19,7 +19,7 @@ Section "Chocolatey" SEC_CHOCOLATEY
     DetailPrint "Checking and Installing Chocolatey..."
     
     ; Use PowerShell to download and install Chocolatey
-    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString(''https://community.chocolatey.org/install.ps1''))"'
+    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString("https://community.chocolatey.org/install.ps1"))"'
     Pop $0
     ${If} $0 == "0"
         DetailPrint "Chocolatey installed successfully."
@@ -51,7 +51,7 @@ Section "MSYS2" SEC_MSYS2
     DetailPrint "Downloading MSYS2 Installer..."
     
     ; Download MSYS2 Installer using PowerShell
-    nsExec::ExecToLog 'powershell -Command "(New-Object System.Net.WebClient).DownloadFile(''https://github.com/msys2/msys2-installer/releases/download/2024-01-13/msys2-x86_64-20240113.exe'', ''$TEMP\msys2-installer.exe'')"'
+    nsExec::ExecToLog 'powershell -Command "(New-Object System.Net.WebClient).DownloadFile("https://github.com/msys2/msys2-installer/releases/download/2024-01-13/msys2-x86_64-20240113.exe", "$TEMP\msys2-installer.exe")"'
     Pop $0
     ${If} $0 == "0"
         DetailPrint "MSYS2 installer downloaded successfully."
