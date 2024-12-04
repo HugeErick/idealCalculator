@@ -1,8 +1,7 @@
-# Make Installation Wizard for Windows
-# This script checks and installs Chocolatey, then installs Make
+Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms
 
 # Function to check if running as administrator
-function Test-Adminrights {
+function Test-AdminRights {
     $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -11,22 +10,24 @@ function Test-Adminrights {
 # Function to install Chocolatey if not already installed
 function Install-Chocolatey {
     if (!(Get-Command choco.exe -ErrorAction SilentlyContinue)) {
-        Write-Host "Chocolatey not found. Installing Chocolatey..." -ForegroundColor Yellow
-        
         try {
+            Write-Host "Chocolatey not found. Installing Chocolatey..." -ForegroundColor Yellow
+            
             Set-ExecutionPolicy Bypass -Scope Process -Force
             [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
             Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
             
             Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
+            return $true
         }
         catch {
             Write-Host "Failed to install Chocolatey. Error: $_" -ForegroundColor Red
-            exit 1
+            return $false
         }
     }
     else {
         Write-Host "Chocolatey is already installed." -ForegroundColor Green
+        return $true
     }
 }
 
@@ -41,11 +42,130 @@ function Install-Make {
         # Verify installation
         $makeVersion = (& make --version) -join "`n"
         Write-Host "Installed Make Version:`n$makeVersion" -ForegroundColor Cyan
+        return $true
     }
     catch {
         Write-Host "Failed to install Make. Error: $_" -ForegroundColor Red
-        exit 1
+        return $false
     }
+}
+
+# CLI Installation Function
+function Invoke-CLIInstallation {
+    # Welcome message
+    Write-Host "Make Installation Wizard for Windows" -ForegroundColor Magenta
+    Write-Host "This wizard will install Chocolatey (if not already installed) and then install Make." -ForegroundColor Cyan
+    
+    # Confirm with user
+    $confirmation = Read-Host "Do you want to proceed? (Y/N)"
+    if ($confirmation -ne 'Y') {
+        Write-Host "Installation cancelled." -ForegroundColor Yellow
+        return
+    }
+    
+    # Install Chocolatey and Make
+    $chocoResult = Install-Chocolatey
+    if ($chocoResult) {
+        $makeResult = Install-Make
+        
+        if ($makeResult) {
+            # Post-installation message
+            Write-Host "`nMake is now installed and ready to use in PowerShell or CMD." -ForegroundColor Green
+            Write-Host "You can verify the installation by running 'make --version' in your terminal." -ForegroundColor Cyan
+        }
+    }
+    
+    pause
+}
+
+# GUI Installation Function
+function Invoke-GUIInstallation {
+    # Create WPF Window
+    [xml]$xaml = @"
+    <Window 
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Make Installation Wizard" Height="450" Width="600"
+        WindowStartupLocation="CenterScreen">
+        <Grid>
+            <StackPanel Margin="20">
+                <TextBlock Text="Make Installation Wizard" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+                
+                <TextBlock Text="This wizard will install Chocolatey (if not already installed) and Make." 
+                           TextWrapping="Wrap" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+                
+                <ProgressBar Name="progressBar" Height="20" Margin="0,0,0,20" Minimum="0" Maximum="100"/>
+                
+                <TextBlock Name="statusText" Text="" TextWrapping="Wrap" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+                
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Name="installButton" Content="Install" Width="100" Margin="0,0,10,0"/>
+                    <Button Name="cancelButton" Content="Cancel" Width="100"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Window>
+"@
+
+    # Create Window
+    $reader = (New-Object System.Xml.XmlNodeReader $xaml)
+    $window = [Windows.Markup.XamlReader]::Load($reader)
+
+    # Get Controls
+    $progressBar = $window.FindName("progressBar")
+    $statusText = $window.FindName("statusText")
+    $installButton = $window.FindName("installButton")
+    $cancelButton = $window.FindName("cancelButton")
+
+    # Event Handlers
+    $cancelButton.Add_Click({
+        $window.Close()
+    })
+
+    $installButton.Add_Click({
+        # Disable install button during process
+        $installButton.IsEnabled = $false
+        $statusText.Text = ""
+        $progressBar.Value = 0
+
+        # Check Admin Rights
+        if (!(Test-AdminRights)) {
+            [System.Windows.MessageBox]::Show("This installer requires administrator rights.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+            $installButton.IsEnabled = $true
+            return
+        }
+
+        # Update Status for Chocolatey
+        $statusText.Text = "Installing Chocolatey..."
+        $progressBar.Value = 25
+        $chocoResult = Install-Chocolatey
+
+        if ($chocoResult) {
+            # Update Status for Make
+            $statusText.Text = "Installing Make..."
+            $progressBar.Value = 75
+            $makeResult = Install-Make
+
+            if ($makeResult) {
+                $statusText.Text = "Installation Complete!"
+                $progressBar.Value = 100
+                [System.Windows.MessageBox]::Show("Make has been successfully installed.", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+            }
+            else {
+                $statusText.Text = "Make Installation Failed"
+                [System.Windows.MessageBox]::Show("Failed to install Make.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+            }
+        }
+        else {
+            $statusText.Text = "Chocolatey Installation Failed"
+            [System.Windows.MessageBox]::Show("Failed to install Chocolatey.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+        }
+
+        $installButton.IsEnabled = $true
+    })
+
+    # Show Window
+    $window.ShowDialog() | Out-Null
 }
 
 # Main script execution
@@ -57,27 +177,22 @@ function Main {
         exit 1
     }
 
-    # Welcome message
-    Write-Host "Make Installation Wizard for Windows" -ForegroundColor Magenta
-    Write-Host "This wizard will install Chocolatey (if not already installed) and then install Make." -ForegroundColor Cyan
-
-    # Confirm with user
-    $confirmation = Read-Host "Do you want to proceed? (Y/N)"
-    if ($confirmation -ne 'Y') {
-        Write-Host "Installation cancelled." -ForegroundColor Yellow
-        exit 0
+    # Determine installation mode based on arguments
+    if ($args.Count -gt 0) {
+        switch ($args[0]) {
+            "gui" { Invoke-GUIInstallation }
+            "cli" { Invoke-CLIInstallation }
+            default { 
+                Write-Host "Invalid argument. Use 'gui' or 'cli'." -ForegroundColor Red
+                exit 1
+            }
+        }
     }
-
-    # Install Chocolatey and Make
-    Install-Chocolatey
-    Install-Make
-
-    # Post-installation message
-    Write-Host "`nMake is now installed and ready to use in PowerShell or CMD." -ForegroundColor Green
-    Write-Host "You can verify the installation by running 'make --version' in your terminal." -ForegroundColor Cyan
-
-    pause
+    else {
+        # Default to CLI if no argument provided
+        Invoke-CLIInstallation
+    }
 }
 
 # Run the main script
-Main
+Main @args
