@@ -22,5 +22,5 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 
 :: Run the PowerShell script with GUI mode
-PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0winScript.ps1" gui
+PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '%~dp0winScript.ps1' gui"
 pause
