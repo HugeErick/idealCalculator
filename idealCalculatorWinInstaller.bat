@@ -22,5 +22,5 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 
 :: Run the PowerShell script
-PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File "MakeInstallWizard.ps1"
+PowerShell.exe -NoProfile -ExecutionPolicy Bypass -File "winWizard.ps1"
 pause
