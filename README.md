@@ -37,14 +37,24 @@ idealCalculator is a C-based numerical integration tool that implements the Comp
     ```
     idealCalculatorWinInstaller.bat
     ```
-    2. Clone the repository:
+    2. App execution:
+    - **Windows**:
+    1.  In PowerShell go where u unzipped the project
+    2. Build the project:
+    ```PowerShell
+    make clean
+    make run
+    ```
+    - **Else**:
+    1. Clone the project:
     ```bash
     git clone https://github.com/HugeErick/idealCalculator.git
     cd idealCalculator
     ```
-    3. Build the project:
+    2. Build the project:
     ```bash
-    make
+    make clean
+    make run
     ```
 
 ## Usage
