@@ -5,12 +5,14 @@ ifeq ($(OS),Windows_NT)
     RM = del /Q
     RM_DIR = rmdir /S /Q
     MKDIR = mkdir
+    TARGET = $(BIN_DIR)\idealCalcu$(EXE_EXT)
 else
     CC = gcc
     EXE_EXT = 
     RM = rm -f
     RM_DIR = rm -rf
     MKDIR = mkdir -p
+    TARGET = $(BIN_DIR)/idealCalcu$(EXE_EXT)
 endif
 
 CFLAGS = -Wall -Wextra -lm -ggdb
@@ -20,7 +22,6 @@ OBJ_DIR = obj
 BIN_DIR = bin
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
-TARGET = $(BIN_DIR)/idealCalcu$(EXE_EXT)
 
 .PHONY: all clean run
 
@@ -40,7 +41,7 @@ clean:
 
 ifeq ($(OS),Windows_NT)
 run: $(TARGET)
-	.\$(TARGET)
+	$(TARGET)
 else
 run: $(TARGET)
 	./$(TARGET)
