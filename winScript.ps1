@@ -31,6 +31,13 @@ function Install-Chocolatey {
     }
 }
 
+# Function to check if MSYS2 is already installed
+function Test-MSYS2Installed {
+    return (Get-Command msys2 -ErrorAction SilentlyContinue) -or 
+           (Test-Path "C:\msys64\usr\bin\msys-2.0.dll") -or 
+           (Test-Path "C:\Program Files\MSYS2\msys2.exe")
+}
+
 # Function to install Make
 function Install-Make {
     try {
@@ -50,10 +57,35 @@ function Install-Make {
     }
 }
 
-# CLI Installation Function
-function Invoke-CLIInstallation {
-    # (Kept the same as in the original script)
-    # ... (previous CLI installation code)
+# Function to install MSYS2
+function Install-MSYS2 {
+    try {
+        # Check if already installed
+        if (Test-MSYS2Installed) {
+            Write-Host "MSYS2 is already installed." -ForegroundColor Green
+            return $true
+        }
+
+        Write-Host "Installing MSYS2 via Chocolatey..." -ForegroundColor Yellow
+        choco install msys2 -y
+        
+        Write-Host "MSYS2 installation completed successfully!" -ForegroundColor Green
+        
+        # Verify installation
+        $msys2Version = & msys2 --version 2>&1
+        Write-Host "Installed MSYS2 Version:`n$msys2Version" -ForegroundColor Cyan
+        
+        # Perform initial update and install base development tools
+        Write-Host "Updating MSYS2 and installing base development tools..." -ForegroundColor Yellow
+        Start-Process "C:\msys64\msys2.exe" -ArgumentList "-c 'pacman -Syu --noconfirm'" -Wait
+        Start-Process "C:\msys64\msys2.exe" -ArgumentList "-c 'pacman -S --noconfirm base-devel mingw-w64-x86_64-toolchain git'" -Wait
+        
+        return $true
+    }
+    catch {
+        Write-Host "Failed to install MSYS2. Error: $_" -ForegroundColor Red
+        return $false
+    }
 }
 
 # GUI Installation Function
@@ -63,13 +95,13 @@ function Invoke-GUIInstallation {
     <Window 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Make Installation Wizard" Height="450" Width="600"
+        Title="Development Tools Installation Wizard" Height="450" Width="600"
         WindowStartupLocation="CenterScreen">
         <Grid>
             <StackPanel Margin="20">
-                <TextBlock Text="Make Installation Wizard" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+                <TextBlock Text="Development Tools Installation Wizard" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" HorizontalAlignment="Center"/>
                 
-                <TextBlock Text="This wizard will install Chocolatey (if not already installed) and Make." 
+                <TextBlock Text="This wizard will install Chocolatey, Make, and MSYS2 for development tools." 
                            TextWrapping="Wrap" Margin="0,0,0,20" HorizontalAlignment="Center"/>
                 
                 <ProgressBar Name="progressBar" Height="20" Margin="0,0,0,20" Minimum="0" Maximum="100"/>
@@ -127,15 +159,27 @@ function Invoke-GUIInstallation {
         if ($chocoResult) {
             # Update Status for Make
             $statusText.Text = "Installing Make..."
-            $progressBar.Value = 75
+            $progressBar.Value = 50
             $makeResult = Install-Make
 
             if ($makeResult) {
-                $statusText.Text = "Installation Complete!"
-                $progressBar.Value = 100
-                $finishButton.IsEnabled = $true
-                $installButton.Visibility = 'Collapsed'
-                [System.Windows.MessageBox]::Show("Make has been successfully installed.", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+                # Update Status for MSYS2
+                $statusText.Text = "Installing MSYS2..."
+                $progressBar.Value = 75
+                $msys2Result = Install-MSYS2
+
+                if ($msys2Result) {
+                    $statusText.Text = "Installation Complete!"
+                    $progressBar.Value = 100
+                    $finishButton.IsEnabled = $true
+                    $installButton.Visibility = 'Collapsed'
+                    [System.Windows.MessageBox]::Show("Chocolatey, Make, and MSYS2 have been successfully installed.", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+                }
+                else {
+                    $statusText.Text = "MSYS2 Installation Failed"
+                    [System.Windows.MessageBox]::Show("Failed to install MSYS2.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+                    $installButton.IsEnabled = $true
+                }
             }
             else {
                 $statusText.Text = "Make Installation Failed"
