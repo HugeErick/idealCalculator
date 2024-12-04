@@ -5,14 +5,16 @@ ifeq ($(OS),Windows_NT)
     RM = del /Q
     RM_DIR = rmdir /S /Q
     MKDIR = mkdir
-    TARGET = $(BIN_DIR)\idealCalcu$(EXE_EXT)
+    TARGET = $(BIN_DIR)/idealCalcu$(EXE_EXT)
+    RUN_CMD = $(BIN_DIR)/idealCalcu$(EXE_EXT)
 else
     CC = gcc
-    EXE_EXT = 
+    EXE_EXT =
     RM = rm -f
     RM_DIR = rm -rf
     MKDIR = mkdir -p
     TARGET = $(BIN_DIR)/idealCalcu$(EXE_EXT)
+    RUN_CMD = ./$(BIN_DIR)/idealCalcu$(EXE_EXT)
 endif
 
 CFLAGS = -Wall -Wextra -lm -ggdb
@@ -39,10 +41,6 @@ $(BIN_DIR) $(OBJ_DIR):
 clean:
 	$(RM_DIR) $(OBJ_DIR) $(BIN_DIR)
 
-ifeq ($(OS),Windows_NT)
 run: $(TARGET)
-	$(TARGET)
-else
-run: $(TARGET)
-	./$(TARGET)
-endif
+	$(RUN_CMD)
+
