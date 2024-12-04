@@ -2,18 +2,22 @@
 ifeq ($(OS),Windows_NT)
     CC = x86_64-w64-mingw32-gcc  # MSYS2 MinGW-w64 GCC
     EXE_EXT = .exe
+    RM = del /Q
+    RM_DIR = rmdir /S /Q
+    MKDIR = mkdir
 else
     CC = gcc
     EXE_EXT = 
+    RM = rm -f
+    RM_DIR = rm -rf
+    MKDIR = mkdir -p
 endif
 
 CFLAGS = -Wall -Wextra -lm -ggdb
-
 SRC_DIR = src
 HRD_DIR = hrd
 OBJ_DIR = obj
 BIN_DIR = bin
-
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 TARGET = $(BIN_DIR)/idealCalcu$(EXE_EXT)
@@ -29,11 +33,15 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I$(HRD_DIR) -c $< -o $@
 
 $(BIN_DIR) $(OBJ_DIR):
-	mkdir -p $@
+	$(MKDIR) $@
 
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	$(RM_DIR) $(OBJ_DIR) $(BIN_DIR)
 
+ifeq ($(OS),Windows_NT)
+run: $(TARGET)
+	.\$(TARGET)
+else
 run: $(TARGET)
 	./$(TARGET)
-
+endif
