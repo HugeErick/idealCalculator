@@ -7,84 +7,21 @@ function Test-AdminRights {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-# Function to install Chocolatey if not already installed
-function Install-Chocolatey {
-    if (!(Get-Command choco.exe -ErrorAction SilentlyContinue)) {
-        try {
-            Write-Host "Chocolatey not found. Installing Chocolatey..." -ForegroundColor Yellow
-            
-            Set-ExecutionPolicy Bypass -Scope Process -Force
-            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-            Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-            
-            Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
-            return $true
-        }
-        catch {
-            Write-Host "Failed to install Chocolatey. Error: $_" -ForegroundColor Red
-            return $false
-        }
-    }
-    else {
-        Write-Host "Chocolatey is already installed." -ForegroundColor Green
-        return $true
-    }
-}
-
-# Function to check if MSYS2 is already installed
-function Test-MSYS2Installed {
-    return (Get-Command msys2 -ErrorAction SilentlyContinue) -or 
-           (Test-Path "C:\msys64\usr\bin\msys-2.0.dll") -or 
-           (Test-Path "C:\Program Files\MSYS2\msys2.exe")
-}
-
-# Function to install Make
-function Install-Make {
+# Function to create a shortcut to the executable
+function Create-Shortcut {
+    param (
+        [string]$TargetPath,
+        [string]$ShortcutPath
+    )
     try {
-        Write-Host "Installing Make via Chocolatey..." -ForegroundColor Yellow
-        choco install make -y
-        
-        Write-Host "Make installation completed successfully!" -ForegroundColor Green
-        
-        # Verify installation
-        $makeVersion = (& make --version) -join "`n"
-        Write-Host "Installed Make Version:`n$makeVersion" -ForegroundColor Cyan
-        return $true
+        $WScriptShell = New-Object -ComObject WScript.Shell
+        $Shortcut = $WScriptShell.CreateShortcut($ShortcutPath)
+        $Shortcut.TargetPath = $TargetPath
+        $Shortcut.Save()
+        Write-Host "Shortcut created successfully: $ShortcutPath" -ForegroundColor Green
     }
     catch {
-        Write-Host "Failed to install Make. Error: $_" -ForegroundColor Red
-        return $false
-    }
-}
-
-# Function to install MSYS2
-function Install-MSYS2 {
-    try {
-        # Check if already installed
-        if (Test-MSYS2Installed) {
-            Write-Host "MSYS2 is already installed." -ForegroundColor Green
-            return $true
-        }
-
-        Write-Host "Installing MSYS2 via Chocolatey..." -ForegroundColor Yellow
-        choco install msys2 -y
-        
-        Write-Host "MSYS2 installation completed successfully!" -ForegroundColor Green
-        
-        # Verify installation
-        $msys2Version = & msys2 --version 2>&1
-        Write-Host "Installed MSYS2 Version:`n$msys2Version" -ForegroundColor Cyan
-        
-        # Perform initial update and install base development tools
-        Write-Host "Updating MSYS2 and installing base development tools..." -ForegroundColor Yellow
-        Start-Process "C:\msys64\msys2.exe" -ArgumentList "-c 'pacman -Syu --noconfirm'" -Wait
-        Start-Process "C:\msys64\msys2.exe" -ArgumentList "-c 'pacman -S --noconfirm base-devel mingw-w64-x86_64-toolchain git'" -Wait
-        
-        return $true
-    }
-    catch {
-        Write-Host "Failed to install MSYS2. Error: $_" -ForegroundColor Red
-        return $false
+        Write-Host "Failed to create shortcut. Error: $_" -ForegroundColor Red
     }
 }
 
@@ -95,7 +32,7 @@ function Invoke-GUIInstallation {
     <Window 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Development Tools Installation Wizard" Height="450" Width="600"
+        Title="Development Tools Installation Wizard" Height="500" Width="600"
         WindowStartupLocation="CenterScreen">
         <Grid>
             <StackPanel Margin="20">
@@ -108,8 +45,11 @@ function Invoke-GUIInstallation {
                 
                 <TextBlock Name="statusText" Text="" TextWrapping="Wrap" Margin="0,0,0,20" HorizontalAlignment="Center"/>
                 
+                <CheckBox Name="shortcutCheckbox" Content="Create Shortcut for idealCalculator" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button Name="installButton" Content="Install" Width="100" Margin="0,0,10,0"/>
+                    <Button Name="runButton" Content="Run" Width="100" Margin="0,0,10,0" IsEnabled="False"/>
                     <Button Name="finishButton" Content="Finish" Width="100" IsEnabled="False"/>
                     <Button Name="cancelButton" Content="Cancel" Width="100" Margin="10,0,0,0"/>
                 </StackPanel>
@@ -125,7 +65,9 @@ function Invoke-GUIInstallation {
     # Get Controls
     $progressBar = $window.FindName("progressBar")
     $statusText = $window.FindName("statusText")
+    $shortcutCheckbox = $window.FindName("shortcutCheckbox")
     $installButton = $window.FindName("installButton")
+    $runButton = $window.FindName("runButton")
     $finishButton = $window.FindName("finishButton")
     $cancelButton = $window.FindName("cancelButton")
 
@@ -136,6 +78,16 @@ function Invoke-GUIInstallation {
 
     $finishButton.Add_Click({
         $window.Close()
+    })
+
+    $runButton.Add_Click({
+        $exePath = Join-Path -Path (Get-Location) -ChildPath "bin\idealCalcu.exe"
+        if (Test-Path $exePath) {
+            Start-Process $exePath
+        }
+        else {
+            [System.Windows.MessageBox]::Show("Executable not found. Please build the application first.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+        }
     })
 
     $installButton.Add_Click({
@@ -171,7 +123,16 @@ function Invoke-GUIInstallation {
                 if ($msys2Result) {
                     $statusText.Text = "Installation Complete!"
                     $progressBar.Value = 100
+
+                    # Check if shortcut creation is selected
+                    if ($shortcutCheckbox.IsChecked -eq $true) {
+                        $exePath = Join-Path -Path (Get-Location) -ChildPath "bin\idealCalcu.exe"
+                        $shortcutPath = [Environment]::GetFolderPath("Desktop") + "\idealCalculator.lnk"
+                        Create-Shortcut -TargetPath $exePath -ShortcutPath $shortcutPath
+                    }
+
                     $finishButton.IsEnabled = $true
+                    $runButton.IsEnabled = $true
                     $installButton.Visibility = 'Collapsed'
                     [System.Windows.MessageBox]::Show("Chocolatey, Make, and MSYS2 have been successfully installed.", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
                 }
@@ -207,22 +168,10 @@ function Main {
         exit 1
     }
 
-    # Determine installation mode based on arguments
-    if ($args.Count -gt 0) {
-        switch ($args[0]) {
-            "gui" { Invoke-GUIInstallation }
-            "cli" { Invoke-CLIInstallation }
-            default { 
-                Write-Host "Invalid argument. Use 'gui' or 'cli'." -ForegroundColor Red
-                exit 1
-            }
-        }
-    }
-    else {
-        # Default to CLI if no argument provided
-        Invoke-CLIInstallation
-    }
+    # Default to GUI mode
+    Invoke-GUIInstallation
 }
 
 # Run the main script
-Main @args
+Main
+
