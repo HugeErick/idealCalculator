@@ -161,12 +161,26 @@ function Invoke-GUIInstallation {
     })
 
     $runButton.Add_Click({
+        # Run make clean and make run first
+        try {
+            Write-Host "Running make clean..." -ForegroundColor Yellow
+            & make clean
+
+            Write-Host "Running make run to build Windows binaries..." -ForegroundColor Yellow
+            & make run
+        }
+        catch {
+            [System.Windows.MessageBox]::Show("Error running make commands: $_", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+            return
+        }
+
+        # After make commands, check for executable
         $exePath = Join-Path -Path (Get-Location) -ChildPath "bin\idealCalcu.exe"
         if (Test-Path $exePath) {
             Start-Process $exePath
         }
         else {
-            [System.Windows.MessageBox]::Show("Executable not found. Please build the application first.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+            [System.Windows.MessageBox]::Show("Executable not found after make commands. Please check your build process.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
         }
     })
 
