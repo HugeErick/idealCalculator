@@ -7,7 +7,87 @@ function Test-AdminRights {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-# Function to create a shortcut to the executable
+# Function to install Chocolatey if not already installed
+function Install-Chocolatey {
+    if (!(Get-Command choco.exe -ErrorAction SilentlyContinue)) {
+        try {
+            Write-Host "Chocolatey not found. Installing Chocolatey..." -ForegroundColor Yellow
+            
+            Set-ExecutionPolicy Bypass -Scope Process -Force
+            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+            Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+            
+            Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
+            return $true
+        }
+        catch {
+            Write-Host "Failed to install Chocolatey. Error: $_" -ForegroundColor Red
+            return $false
+        }
+    }
+    else {
+        Write-Host "Chocolatey is already installed." -ForegroundColor Green
+        return $true
+    }
+}
+
+# Function to check if MSYS2 is already installed
+function Test-MSYS2Installed {
+    return (Get-Command msys2 -ErrorAction SilentlyContinue) -or 
+           (Test-Path "C:\msys64\usr\bin\msys-2.0.dll") -or 
+           (Test-Path "C:\Program Files\MSYS2\msys2.exe")
+}
+
+# Function to install Make
+function Install-Make {
+    try {
+        Write-Host "Installing Make via Chocolatey..." -ForegroundColor Yellow
+        choco install make -y
+        
+        Write-Host "Make installation completed successfully!" -ForegroundColor Green
+        
+        # Verify installation
+        $makeVersion = (& make --version) -join "`n"
+        Write-Host "Installed Make Version:`n$makeVersion" -ForegroundColor Cyan
+        return $true
+    }
+    catch {
+        Write-Host "Failed to install Make. Error: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+# Function to install MSYS2
+function Install-MSYS2 {
+    try {
+        # Check if already installed
+        if (Test-MSYS2Installed) {
+            Write-Host "MSYS2 is already installed." -ForegroundColor Green
+            return $true
+        }
+
+        Write-Host "Installing MSYS2 via Chocolatey..." -ForegroundColor Yellow
+        choco install msys2 -y
+        
+        Write-Host "MSYS2 installation completed successfully!" -ForegroundColor Green
+        
+        # Verify installation
+        $msys2Version = & msys2 --version 2>&1
+        Write-Host "Installed MSYS2 Version:`n$msys2Version" -ForegroundColor Cyan
+        
+        # Perform initial update and install base development tools
+        Write-Host "Updating MSYS2 and installing base development tools..." -ForegroundColor Yellow
+        Start-Process "C:\msys64\msys2.exe" -ArgumentList "-c 'pacman -Syu --noconfirm'" -Wait
+        Start-Process "C:\msys64\msys2.exe" -ArgumentList "-c 'pacman -S --noconfirm base-devel mingw-w64-x86_64-toolchain git'" -Wait
+        
+        return $true
+    }
+    catch {
+        Write-Host "Failed to install MSYS2. Error: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
 function Create-Shortcut {
     param (
         [string]$TargetPath,
@@ -159,6 +239,7 @@ function Invoke-GUIInstallation {
     $window.ShowDialog() | Out-Null
 }
 
+
 # Main script execution
 function Main {
     # Check for admin rights
@@ -174,4 +255,3 @@ function Main {
 
 # Run the main script
 Main
-
