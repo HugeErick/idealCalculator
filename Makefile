@@ -17,25 +17,36 @@ else
     RUN_CMD = ./$(BIN_DIR)/idealCalcu$(EXE_EXT)
 endif
 
-CFLAGS = -Wall -Wextra -lm -ggdb
+CFLAGS = -Wall -Wextra -lm -ggdb 
+INCLUDE_DIRS = -I./hdr -I../hdr -I../../hdr
+CFLAGS += $(INCLUDE_DIRS)
+LIBS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 
+
 SRC_DIR = src
-HRD_DIR = hrd
+BACKE_DIR = $(SRC_DIR)/backe
+HRD_DIR = hdr
 OBJ_DIR = obj
 BIN_DIR = bin
-SRCS = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+
+# Find source files in both src and src/backe directories
+SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(BACKE_DIR)/*.c)
+OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(filter $(SRC_DIR)/%.c,$(SRCS))) \
+       $(patsubst $(BACKE_DIR)/%.c,$(OBJ_DIR)/backe/%.o,$(filter $(BACKE_DIR)/%.c,$(SRCS)))
 
 .PHONY: all clean run
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS) | $(BIN_DIR)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -I$(HRD_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BIN_DIR) $(OBJ_DIR):
+$(OBJ_DIR)/backe/%.o: $(BACKE_DIR)/%.c | $(OBJ_DIR)/backe
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BIN_DIR) $(OBJ_DIR) $(OBJ_DIR)/backe:
 	$(MKDIR) $@
 
 clean:
@@ -43,4 +54,3 @@ clean:
 
 run: $(TARGET)
 	$(RUN_CMD)
-

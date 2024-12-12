@@ -1,4 +1,4 @@
-#include "../hdr/numericalIntegration.h"
+#include "numericalIntegration.h"
 
 double compositeTrapezoidRule(double (*integrand)(double), double lowerLimit, double upperLimit, int subintervals) {
     double stepSize = (upperLimit - lowerLimit) / subintervals;

@@ -88,6 +88,22 @@ function Install-MSYS2 {
     }
 }
 
+# Function to install Raylib
+function Install-Raylib {
+    try {
+        Write-Host "Installing Raylib via Chocolatey..." -ForegroundColor Yellow
+        choco install raylib -y
+        
+        Write-Host "Raylib installation completed successfully!" -ForegroundColor Green
+        
+        return $true
+    }
+    catch {
+        Write-Host "Failed to install Raylib. Error: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
 function Create-Shortcut {
     param (
         [string]$TargetPath,
@@ -215,20 +231,32 @@ function Invoke-GUIInstallation {
                 $msys2Result = Install-MSYS2
 
                 if ($msys2Result) {
-                    $statusText.Text = "Installation Complete!"
-                    $progressBar.Value = 100
+                    # Add Raylib installation
+                    $statusText.Text = "Installing Raylib..."
+                    $progressBar.Value = 90
+                    $raylibResult = Install-Raylib
 
-                    # Check if shortcut creation is selected
-                    if ($shortcutCheckbox.IsChecked -eq $true) {
-                        $exePath = Join-Path -Path (Get-Location) -ChildPath "bin\idealCalcu.exe"
-                        $shortcutPath = [Environment]::GetFolderPath("Desktop") + "\idealCalculator.lnk"
-                        Create-Shortcut -TargetPath $exePath -ShortcutPath $shortcutPath
+                    if ($raylibResult) {
+                        $statusText.Text = "Installation Complete!"
+                        $progressBar.Value = 100
+
+                        # Check if shortcut creation is selected
+                        if ($shortcutCheckbox.IsChecked -eq $true) {
+                            $exePath = Join-Path -Path (Get-Location) -ChildPath "bin\idealCalcu.exe"
+                            $shortcutPath = [Environment]::GetFolderPath("Desktop") + "\idealCalculator.lnk"
+                            Create-Shortcut -TargetPath $exePath -ShortcutPath $shortcutPath
+                        }
+
+                        $finishButton.IsEnabled = $true
+                        $runButton.IsEnabled = $true
+                        $installButton.Visibility = 'Collapsed'
+                        [System.Windows.MessageBox]::Show("Chocolatey, Make, MSYS2, and Raylib have been successfully installed.", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
                     }
-
-                    $finishButton.IsEnabled = $true
-                    $runButton.IsEnabled = $true
-                    $installButton.Visibility = 'Collapsed'
-                    [System.Windows.MessageBox]::Show("Chocolatey, Make, and MSYS2 have been successfully installed.", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+                    else {
+                        $statusText.Text = "Raylib Installation Failed"
+                        [System.Windows.MessageBox]::Show("Failed to install Raylib.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+                        $installButton.IsEnabled = $true
+                    }
                 }
                 else {
                     $statusText.Text = "MSYS2 Installation Failed"
@@ -252,6 +280,7 @@ function Invoke-GUIInstallation {
     # Show Window
     $window.ShowDialog() | Out-Null
 }
+
 
 
 # Main script execution
