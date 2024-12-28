@@ -88,15 +88,84 @@ function Install-MSYS2 {
     }
 }
 
+# Add this new function after the Install-Raylib function
+function Add-RaylibToPath {
+    try {
+        Write-Host "Adding Raylib to system PATH..." -ForegroundColor Yellow
+        
+        # Default Raylib installation paths
+        $raylibPaths = @(
+            "C:\Program Files\raylib\bin",
+            "C:\Program Files (x86)\raylib\bin",
+            "${env:ChocolateyInstall}\lib\raylib\tools\raylib\bin"
+        )
+        
+        # Find the actual Raylib installation path
+        $raylibPath = $null
+        foreach ($path in $raylibPaths) {
+            if (Test-Path $path) {
+                $raylibPath = $path
+                break
+            }
+        }
+        
+        if ($null -eq $raylibPath) {
+            Write-Host "Could not find Raylib installation directory." -ForegroundColor Red
+            return $false
+        }
+        
+        # Get the current PATH
+        $currentPath = [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Machine)
+        
+        # Check if the path is already in PATH
+        if ($currentPath -split ";" -contains $raylibPath) {
+            Write-Host "Raylib path is already in system PATH." -ForegroundColor Green
+            return $true
+        }
+        
+        # Add Raylib to PATH
+        $newPath = "$currentPath;$raylibPath"
+        [Environment]::SetEnvironmentVariable("PATH", $newPath, [EnvironmentVariableTarget]::Machine)
+        
+        # Verify the path was added
+        $updatedPath = [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Machine)
+        if ($updatedPath -split ";" -contains $raylibPath) {
+            Write-Host "Successfully added Raylib to system PATH." -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "Failed to verify Raylib path in system PATH." -ForegroundColor Red
+            return $false
+        }
+    }
+    catch {
+        Write-Host "Failed to add Raylib to PATH. Error: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+
 # Function to install Raylib
 function Install-Raylib {
     try {
         Write-Host "Installing Raylib via Chocolatey..." -ForegroundColor Yellow
         choco install raylib -y
         
-        Write-Host "Raylib installation completed successfully!" -ForegroundColor Green
-        
-        return $true
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Raylib installation completed successfully!" -ForegroundColor Green
+            
+            # Add Raylib to PATH
+            $pathResult = Add-RaylibToPath
+            if ($pathResult) {
+                Write-Host "Raylib setup completed successfully!" -ForegroundColor Green
+                return $true
+            } else {
+                Write-Host "Raylib installed but PATH modification failed." -ForegroundColor Yellow
+                return $false
+            }
+        } else {
+            Write-Host "Failed to install Raylib." -ForegroundColor Red
+            return $false
+        }
     }
     catch {
         Write-Host "Failed to install Raylib. Error: $_" -ForegroundColor Red
@@ -232,7 +301,7 @@ function Invoke-GUIInstallation {
 
                 if ($msys2Result) {
                     # Add Raylib installation
-                    $statusText.Text = "Installing Raylib..."
+                    $statusText.Text = "Installing Raylib and adding path"
                     $progressBar.Value = 90
                     $raylibResult = Install-Raylib
 
